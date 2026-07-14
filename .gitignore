@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Environments
+.venv/
+env/
+venv/
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Results (can be regenerated)
+results/checkpoints/*
+results/figures/*
+results/tables/*
+results/reports/*
+!results/**/.gitkeep
+
+# Data (large / sensitive)
+data/malware_samples_raw/
+data/malware_samples_pe/
+data/malware_images/images/
+data/malware_images/offset_maps/
+data/malware_images/all/
+!data/**/.gitkeep
+
+# Temp
+.temp/
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
