@@ -378,10 +378,10 @@ def evaluate_ensemble_tta(model_paths, loader, device):
 def main():
     global CLASS_TO_IDX, IDX_TO_CLASS, NUM_CLASSES
 
-images_dir = str(_PROJ_DIR / "data" / "malware_images")
-train_csv = str(_PROJ_DIR / "data" / "malware_images" / "train.csv")
-val_csv = str(_PROJ_DIR / "data" / "malware_images" / "val.csv")
-test_csv = str(_PROJ_DIR / "data" / "malware_images" / "test.csv")
+    images_dir = str(_PROJ_DIR / "data" / "malware_images")
+    train_csv = str(_PROJ_DIR / "data" / "malware_images" / "train.csv")
+    val_csv = str(_PROJ_DIR / "data" / "malware_images" / "val.csv")
+    test_csv = str(_PROJ_DIR / "data" / "malware_images" / "test.csv")
 
     families = set()
     for csv_path in [train_csv, val_csv, test_csv]:

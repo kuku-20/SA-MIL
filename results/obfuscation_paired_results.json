@@ -1,0 +1,218 @@
+{
+  "all": {
+    "n": 1905,
+    "mean_original_prob": 0.0607163567472435,
+    "mean_obfuscated_prob": 0.06058298267716536,
+    "mean_prob_delta": -0.00013337407007814328,
+    "thresholds": {
+      "0.5": {
+        "original_fp": 60,
+        "original_fpr": 3.149606299212598,
+        "obfuscated_fp": 59,
+        "obfuscated_fpr": 3.0971128608923886,
+        "fpr_delta_pp": -0.05249343832020997,
+        "mc_nemar_p": 1.0
+      },
+      "0.9": {
+        "original_fp": 17,
+        "original_fpr": 0.8923884514435696,
+        "obfuscated_fp": 18,
+        "obfuscated_fpr": 0.9448818897637795,
+        "fpr_delta_pp": 0.05249343832020997,
+        "mc_nemar_p": 1.0
+      }
+    }
+  },
+  "changed_only": {
+    "n": 1649,
+    "mean_original_prob": 0.056160594167254455,
+    "mean_obfuscated_prob": 0.05600651243177683,
+    "mean_prob_delta": -0.0001540817354776236,
+    "thresholds": {
+      "0.5": {
+        "original_fp": 48,
+        "original_fpr": 2.9108550636749544,
+        "obfuscated_fp": 47,
+        "obfuscated_fpr": 2.850212249848393,
+        "fpr_delta_pp": -0.060642813826561684,
+        "mc_nemar_p": 1.0
+      },
+      "0.9": {
+        "original_fp": 13,
+        "original_fpr": 0.7883565797453002,
+        "obfuscated_fp": 14,
+        "obfuscated_fpr": 0.8489993935718617,
+        "fpr_delta_pp": 0.06064281382656151,
+        "mc_nemar_p": 1.0
+      }
+    }
+  },
+  "unchanged_only": {
+    "n": 256,
+    "mean_original_prob": 0.0900618743035011,
+    "mean_obfuscated_prob": 0.09006188671875001,
+    "mean_prob_delta": 1.2415248912267529e-08,
+    "thresholds": {
+      "0.5": {
+        "original_fp": 12,
+        "original_fpr": 4.6875,
+        "obfuscated_fp": 12,
+        "obfuscated_fpr": 4.6875,
+        "fpr_delta_pp": 0.0,
+        "mc_nemar_p": null
+      },
+      "0.9": {
+        "original_fp": 4,
+        "original_fpr": 1.5625,
+        "obfuscated_fp": 4,
+        "obfuscated_fpr": 1.5625,
+        "fpr_delta_pp": 0.0,
+        "mc_nemar_p": null
+      }
+    }
+  },
+  "train_seen": {
+    "n": 880,
+    "mean_original_prob": 0.06054869663626464,
+    "mean_obfuscated_prob": 0.06036447045454545,
+    "mean_prob_delta": -0.00018422618171918398,
+    "thresholds": {
+      "0.5": {
+        "original_fp": 27,
+        "original_fpr": 3.0681818181818183,
+        "obfuscated_fp": 28,
+        "obfuscated_fpr": 3.1818181818181817,
+        "fpr_delta_pp": 0.11363636363636333,
+        "mc_nemar_p": 1.0
+      },
+      "0.9": {
+        "original_fp": 6,
+        "original_fpr": 0.6818181818181818,
+        "obfuscated_fp": 7,
+        "obfuscated_fpr": 0.7954545454545454,
+        "fpr_delta_pp": 0.11363636363636359,
+        "mc_nemar_p": 1.0
+      }
+    }
+  },
+  "val_seen": {
+    "n": 168,
+    "mean_original_prob": 0.07116176982942436,
+    "mean_obfuscated_prob": 0.07042669642857143,
+    "mean_prob_delta": -0.0007350734008529369,
+    "thresholds": {
+      "0.5": {
+        "original_fp": 7,
+        "original_fpr": 4.166666666666666,
+        "obfuscated_fp": 6,
+        "obfuscated_fpr": 3.571428571428571,
+        "fpr_delta_pp": -0.5952380952380952,
+        "mc_nemar_p": 1.0
+      },
+      "0.9": {
+        "original_fp": 4,
+        "original_fpr": 2.380952380952381,
+        "obfuscated_fp": 4,
+        "obfuscated_fpr": 2.380952380952381,
+        "fpr_delta_pp": 0.0,
+        "mc_nemar_p": null
+      }
+    }
+  },
+  "test_seen": {
+    "n": 189,
+    "mean_original_prob": 0.07269925041193212,
+    "mean_obfuscated_prob": 0.0723051164021164,
+    "mean_prob_delta": -0.000394134009815722,
+    "thresholds": {
+      "0.5": {
+        "original_fp": 8,
+        "original_fpr": 4.232804232804233,
+        "obfuscated_fp": 8,
+        "obfuscated_fpr": 4.232804232804233,
+        "fpr_delta_pp": 0.0,
+        "mc_nemar_p": null
+      },
+      "0.9": {
+        "original_fp": 3,
+        "original_fpr": 1.5873015873015872,
+        "obfuscated_fp": 3,
+        "obfuscated_fpr": 1.5873015873015872,
+        "fpr_delta_pp": 0.0,
+        "mc_nemar_p": null
+      }
+    }
+  },
+  "unseen": {
+    "n": 668,
+    "mean_original_prob": 0.05491986662333463,
+    "mean_obfuscated_prob": 0.0550785868263473,
+    "mean_prob_delta": 0.00015872020301267026,
+    "thresholds": {
+      "0.5": {
+        "original_fp": 18,
+        "original_fpr": 2.694610778443114,
+        "obfuscated_fp": 17,
+        "obfuscated_fpr": 2.5449101796407185,
+        "fpr_delta_pp": -0.14970059880239533,
+        "mc_nemar_p": 1.0
+      },
+      "0.9": {
+        "original_fp": 4,
+        "original_fpr": 0.5988023952095809,
+        "obfuscated_fp": 4,
+        "obfuscated_fpr": 0.5988023952095809,
+        "fpr_delta_pp": 0.0,
+        "mc_nemar_p": null
+      }
+    }
+  },
+  "changed_unseen": {
+    "n": 581,
+    "mean_original_prob": 0.052537438427635086,
+    "mean_obfuscated_prob": 0.052719925989672976,
+    "mean_prob_delta": 0.00018248756203789046,
+    "thresholds": {
+      "0.5": {
+        "original_fp": 15,
+        "original_fpr": 2.5817555938037864,
+        "obfuscated_fp": 14,
+        "obfuscated_fpr": 2.4096385542168677,
+        "fpr_delta_pp": -0.17211703958691893,
+        "mc_nemar_p": 1.0
+      },
+      "0.9": {
+        "original_fp": 3,
+        "original_fpr": 0.5163511187607573,
+        "obfuscated_fp": 3,
+        "obfuscated_fpr": 0.5163511187607573,
+        "fpr_delta_pp": 0.0,
+        "mc_nemar_p": null
+      }
+    }
+  },
+  "changed_train": {
+    "n": 761,
+    "mean_original_prob": 0.05513351260220605,
+    "mean_obfuscated_prob": 0.054920473061760844,
+    "mean_prob_delta": -0.00021303954044520762,
+    "thresholds": {
+      "0.5": {
+        "original_fp": 21,
+        "original_fpr": 2.759526938239159,
+        "obfuscated_fp": 22,
+        "obfuscated_fpr": 2.890932982917214,
+        "fpr_delta_pp": 0.13140604467805522,
+        "mc_nemar_p": 1.0
+      },
+      "0.9": {
+        "original_fp": 5,
+        "original_fpr": 0.657030223390276,
+        "obfuscated_fp": 6,
+        "obfuscated_fpr": 0.7884362680683311,
+        "fpr_delta_pp": 0.13140604467805514,
+        "mc_nemar_p": 1.0
+      }
+    }
+  }
+}

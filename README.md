@@ -250,6 +250,19 @@ python src/training/evaluate.py
 
 Loads multiple trained checkpoints and runs ensemble with TTA, saving results to `results/reports/` and `results/figures/`.
 
+### Supplementary Binary and Robustness Experiments
+
+The repository also contains the supplementary experiments added for robustness and reviewer-response analysis:
+
+| Experiment | Script | Key result |
+|------------|--------|------------|
+| Balanced binary classification | `src/models/mil_binary.py` | AUROC 0.9962, FPR 2.53% |
+| Extreme imbalance (20:1) | `data_prep_imbalance.py` | AUROC 0.9772, TPR 95.56%, FPR 3.44% |
+| UPX-packed benign files | `exp2_final.py` | FPR 3.45% @0.5, 1.45% @0.9 |
+| MorphKatz-obfuscated benign files | `exp3_obfuscation.py`, `exp3_paired_inference.py` | FPR 3.10% @0.5 vs. 3.15% for originals; only 3 paired prediction flips @0.5 |
+
+These are supplementary robustness analyses; the main task remains six-family attribution with physically addressable byte-level traceback.
+
 ## Multi-Channel Imaging
 
 SA-MIL's structure-aware imaging encodes each PE byte into a 3-channel pixel via:

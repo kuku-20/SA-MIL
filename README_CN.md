@@ -251,6 +251,19 @@ python src/training/evaluate.py
 
 加载多个训练好的检查点，运行集成与 TTA，结果保存至 `results/reports/` 和 `results/figures/`。
 
+### 二分类与鲁棒性补充实验
+
+仓库同时保留了用于鲁棒性分析和审稿回应的补充实验：
+
+| 实验 | 脚本 | 关键结果 |
+|------|------|----------|
+| 平衡二分类 | `src/models/mil_binary.py` | AUROC 0.9962，FPR 2.53% |
+| 极端不平衡（20:1） | `data_prep_imbalance.py` | AUROC 0.9772，TPR 95.56%，FPR 3.44% |
+| UPX 加壳良性文件 | `exp2_final.py` | FPR 3.45% @0.5，1.45% @0.9 |
+| MorphKatz 混淆良性文件 | `exp3_obfuscation.py`、`exp3_paired_inference.py` | FPR 3.10% @0.5，原始文件 3.15%；0.5 阈值下仅 3 个配对预测翻转 |
+
+这些实验属于补充鲁棒性分析，项目主任务仍是六家族归因与可物理追溯的字节级定位。
+
 ## 多通道成像
 
 SA-MIL 的结构感知成像将每个 PE 字节编码为三通道像素：

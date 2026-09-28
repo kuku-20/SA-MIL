@@ -1,0 +1,331 @@
+\documentclass[runningheads]{llncs}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{marvosym}
+\usepackage{tikz-cd}
+\usepackage{multicol}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{multirow}
+\usepackage[ruled,linesnumbered,vlined]{algorithm2e}
+\usepackage{wrapfig}
+\raggedbottom\setlength{\parskip}{0pt}
+\setlength{\floatsep}{4pt plus 1pt minus 1pt}
+\setlength{\textfloatsep}{4pt plus 1pt minus 1pt}
+\setlength{\intextsep}{3pt plus 1pt minus 1pt}
+\setlength{\abovecaptionskip}{4pt}
+\setlength{\belowcaptionskip}{4pt}
+\titlerunning{High-Fidelity Byte-Level Malware Attribution via Structure-Aware MIL}
+\authorrunning{W. Zhao et al.}
+\title{Beyond Semantic Drift: High-Fidelity Byte-Level Malware Attribution via Structure-Aware MIL}
+
+\author{Wenzhou Zhao\textsuperscript{(\Letter)} \and Bocheng Zhang \and Yuhang Chen \and Lei Zhang\textsuperscript{(\Letter)}}
+
+\institute{Cyber Science and Engineering, Sichuan University, Chengdu, China \\
+\email{zhaowenzhou@stu.scu.edu.cn, zhanglei2018@scu.edu.cn}}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Image-based malware classification faces a well-documented limitation:
+spatial transformations during binary-to-image conversion disrupt physical
+pixel--byte correspondence, degrading both accuracy and post-hoc
+traceability. We propose SA-MIL, a Structure-Aware Multiple Instance
+Learning framework that preserves deterministic pixel--byte mapping through
+offset-preserving imaging. SA-MIL integrates multi-channel semantic
+imaging, entropy-driven instance sampling, and dual-granularity decision
+traceback, enabling attribution to physically addressable byte intervals at
+instance granularity. SA-MIL achieves a Macro-F1 of 98.8\%
+on a SHA-256\-deduplicated six-family dataset, outperforming MalConv2 (96.4\%) and AB-MIL
+(95.5\%). Binary classification yields AUROCs of 0.9962 under
+balanced conditions and 0.9772 under a 20:1 benign-to-malware ratio.
+Deletion tests show that confidence degrades substantially when
+highlighted byte intervals are removed, with a 22.7\% confidence
+drop after deleting the top 10\% of regions; we report this as relative evidence
+of localization quality. These results indicate that
+SA-MIL supports physically grounded and auditable malware analysis.
+
+\keywords{Malware Classification, Multiple Instance Learning,
+Explainable AI, Image Representation, Reverse Engineering}
+\end{abstract}
+
+
+\section{Introduction}
+
+Deep learning for malware static analysis has advanced rapidly \cite{avtest2025}, with two dominant paradigms: end-to-end sequence methods \cite{raff2017malware} and vision-based methods that map binaries to images \cite{nataraj2011malware}. For vision-based methods, global downsampling can introduce \emph{semantic drift}---the disruption of deterministic byte--pixel correspondence caused by scaling or cropping. When a PE file is forced into fixed dimensions (e.g., $224 \times 224$), a single pixel may aggregate bytes from disjoint offsets, breaking the correspondence needed for reliable attribution. Attribution methods (Grad-CAM \cite{selvaraju2017grad}, RISE \cite{petsiuk2018rise}) may thus yield heatmaps that resist mapping to physical addresses \cite{warnecke2020evaluating,nadeem2023sok}.
+
+To address these challenges, we propose \textbf{SA-MIL}, a structure-aware MIL framework that preserves deterministic pixel--byte mapping for local windows and confines byte-level traceback to them.
+
+The main contributions of this paper are summarized as follows:
+\begin{enumerate}
+    \item We propose SA-MIL to mitigate resizing-induced semantic drift in instance-level attribution through deterministic, offset-preserving local windows.
+    \item We combine multi-channel semantic encoding with entropy-driven instance sampling and $\mathcal{O}(1)$ coordinate-to-offset inversion, enabling dual-granularity traceback from attention weights to physically addressable byte intervals at instance granularity.
+    \item SA-MIL achieves 98.80\% Macro-F1 on six-family attribution. Supplementary binary experiments attain AUROCs of 0.9962 under balanced conditions and 0.9772 under a 20:1 benign-to-malware ratio. Deletion tests further provide relative evidence of instance-level localization quality.
+\end{enumerate}
+
+While SA-MIL is designed and validated for Windows PE executables, its core principles---deterministic offset preservation and entropy-driven structure-aware sampling---may be adapted to other formats with well-defined structural boundaries.
+
+\section{Related Work}
+\label{sec:related_work}
+
+Since Nataraj et al.\ \cite{nataraj2011malware} mapped byte streams to grayscale images, vision-based malware classification has gained popularity for its disassembly-free workflow \cite{vasan2020image,gibert2020survey}. Subsequent efforts introduced structural priors---Qiao et al.\ \cite{qiao2019multi} built multi-channel images with PE metadata. However, global scaling remains a common preprocessing step that can disrupt pixel--byte correspondence \cite{nadeem2023sok}.
+
+On the sequence side, MalConv \cite{raff2017malware} and MalConv2 \cite{raff2021classifying} model raw bytes end-to-end, while attention-based MIL \cite{ilse2018attention} offers a weakly supervised alternative suited to sparse payload distributions \cite{stiborek2018multiple}. Recent state-space models (e.g., Mamba~\cite{gu2023mamba}) enable linear-time long-sequence modeling and can support token-level attribution. However, such attribution operates at token granularity rather than providing the structure-aware, instance-level interval traceback targeted by SA-MIL. We therefore view state-space sequence backbones as complementary, with their integration left to future work. Existing MIL variants also rarely incorporate structure-guided instance sampling or deterministic physical offset mapping---gaps that our work directly addresses.
+
+Security interpretability demands physical byte-level grounding beyond macroscopic heatmaps \cite{nadeem2023sok}. Grad-CAM \cite{selvaraju2017grad} and RISE \cite{petsiuk2018rise}, when directly applied to malware images, can highlight headers or padding rather than malicious logic \cite{warnecke2020evaluating}, and may be sensitive to problem-space perturbations \cite{pierazzi2020intriguing}. Prior analyses in security explainability emphasize that useful attributions should be actionable and faithful to relevant program artifacts \cite{nadeem2023sok,warnecke2020evaluating}, yet deterministic model-to-offset traceback in a unified vision-MIL pipeline remains challenging---the gap that SA-MIL addresses. Recent malware-oriented XAI studies further emphasize that actionable triage requires explanations tied to executable structure rather than diffuse saliency alone \cite{saqib2024comprehensive}.
+
+\section{Methodology}
+\label{sec:methodology}
+
+We consider closed-set PE family attribution and separately evaluate transformation sensitivity, including UPX packing and obfuscated benign files. The defender has static access to the PE file and requires physically addressable localization for triage. Full semantics-preserving binary rewriting is outside scope. We assume an upstream engine has already flagged the sample as malicious; SA-MIL addresses the post-detection triage task of family attribution and byte-region localization. The binary experiments in Section~\ref{subsec:binary_performance} are reported solely to characterize behavior under class imbalance and are not offered as a detection claim.
+
+To keep traceable local instances free of spatial scaling distortions, we propose SA-MIL. As illustrated in Fig.~\ref{fig:samil_overview}, the architecture processes PE executables through three synergistic stages. First, the \textit{Structure-Aware Semantic Imaging} module folds the raw 1D byte stream and its local information entropy into a multi-channel spatial representation, preserving deterministic byte-offset coordinates for local windows. Second, to enhance efficiency while retaining empirically informative regions under a bounded instance budget, the \textit{Entropy-Driven Instance Sampling} module filters out redundant, low-information regions and extracts high-scoring instances for files beyond sequential coverage; remaining files use fixed-order windows. Third, at inference time, the \textit{Dual-Granularity Decision Traceback} module inversely maps attention weights back to exactly addressable intervals at instance granularity, providing explicit, addressable attribution anchors.
+
+\subsection{Design Rationale for Image Representation}
+The $W{=}256$ folding is a bijection $i = y\cdot W + x$ that makes attention-to-offset inversion exact and $O(1)$ rather than gradient-approximated. This spatial indexing also decouples instance selection from backbone inference, while the 2D layout captures PE alignment periodicity with compact local kernels. The contribution of the multi-channel representation is evaluated through the channel ablation study (Section~\ref{subsec:ablation}).
+
+We do \emph{not} claim that image representation is inherently more accurate for malware detection: MalConv2 attains 96.37\% Macro-F1 without any 2D projection. Our claim is deliberately narrower---for local instances, the bijection makes deterministic traceback to physically addressable byte intervals architecturally intrinsic rather than post-hoc.
+
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.72\textwidth]{figures/sa_mil_overview.png}
+    \caption{SA-MIL framework: Module~1 folds bytes into RGB images via $\mathcal{M}(x,y)$; Module~2 constructs MIL bags; Module~3 maps attention to byte intervals.}
+    \label{fig:samil_overview}
+\end{figure}
+
+\subsection{Structure-Aware Semantic Imaging}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.70\textwidth]{figures/structure_aware_imaging.png}
+    \caption{Structure-aware imaging: R-channel (raw bytes), G-channel (section priors), B-channel (local entropy), with deterministic offset mapping.}
+    \label{fig:semantic_imaging}
+\end{figure}
+
+A PE file of $S$ bytes $B = [b_0, \dots, b_{S-1}]$ is folded into a 2D image of width $W=256$, height $H=\lceil S/W \rceil$, with deterministic offset mapping $i = y \cdot W + x$. Byte streams naturally exhibit texture clustering at this scale (encryption blocks, alignment regions, cross-segment calls), providing geometric priors for feature extraction.
+
+Local instances are cropped directly from this image, preserving the bijection. Each bag additionally includes a global-context window $W_0$ formed by resizing the full image to $224\times256$; $W_0$ is used for whole-file awareness and is excluded from byte-level traceback.
+
+\subsubsection{Multi-Channel Semantic Encoding}
+To overcome the semantic flatness of single-byte streams, we design a three-channel representation $(P_R, P_G, P_B)_i$:
+\begin{itemize}
+    \item \textbf{R-channel (Raw Bytes):} $P_R(i) = b_i$, directly preserving opcode sequences and local data patterns.
+    \item \textbf{G-channel (Structure Priors):} Introducing PE section topology. Define mapping $\Phi_{sec}$ to map known sections (\texttt{.text}, \texttt{.rdata}, \texttt{.data}, \texttt{.rsrc}) to discrete reference values. For unknown/obfuscated sections, downgrade to attribute mapping based on RWX permissions. This design introduces high-frequency visual edges at section boundaries, guiding the network to perceive logical discontinuities.
+    \item \textbf{B-channel (Local Entropy):} For a window $W_{ent}$ (default 256 bytes) centered at $b_i$, compute Shannon entropy $H(i) = -\sum_{j=0}^{255} p_j \log_2(p_j)$, linearly normalized to $[0,255]$ as $P_B(i)$. This channel explicitly highlights encrypted and compressed payloads.
+\end{itemize}
+
+\subsubsection{Deterministic Physical Offset Mapping}
+The inverse mapping $\mathcal{M}(x,y)$ returns the file offset and section membership, with section membership queried via a minimal interval tree from PE headers. Once high-risk local instances are located, their sliding windows map to continuous byte intervals $[\min(i), \max(i)]$, with fault-tolerant markings for \texttt{[OVERLAY]/[SLACK]} regions.
+
+\subsection{Entropy-Driven MIL Classification Engine}
+The full image forms a ``Bag'' whose instances are local windows plus $W_0$. Sliding windows ($h_{win}=224$, stride $s=112$) generate local candidates, scored by:
+\begin{equation}
+S(x_k) = \frac{1}{h_{win} \cdot W} \sum_{x,y} \left( x_k^{(B)}(x,y) + \alpha \cdot I_{\text{anomaly}}(x_k^{(G)}(x,y)) \right)
+\label{eq:saliency}
+\end{equation}
+where $x_k^{(B)}$ is local entropy, $I_{\text{anomaly}}(G) = \frac{1}{|W|}\sum \|\nabla G\|_2$ is the G-channel gradient magnitude, and $\alpha=0.5$ balances the two terms' dynamic ranges (tuned on the validation set). For files within sequential coverage, the local windows are taken in fixed physical order. For larger files, entropy-driven selection scores candidates and, after 1D-NMS deduplication (IoU=0.3), retains the top 11 local windows. In both cases, adding $W_0$ yields the fixed budget $N_{\max}{=}12$. Local windows cover at most 616~KiB of file content and are ordered by physical offset. Sensitivity analysis (Section~\ref{subsec:ablation}) confirms that values in 8--16 yield $<$1\% Macro-F1 variation.
+
+\subsubsection{Instance Feature Extraction and Global Sequence Modeling}
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.58\linewidth]{figures/transformer.png}
+    \caption{Entropy-driven sampling, ResNet-50 encoding, and Transformer global stitching pipeline.}
+  \label{fig:entropy-mil-transformer}
+\end{figure}
+
+For the sampled bag $\mathcal{B} = \{x_1, \dots, x_K\}$, processing proceeds in three stages: (1) \textbf{Local Extraction}: each $x_k \in \mathbb{R}^{3 \times h \times w}$ is encoded to $h_k \in \mathbb{R}^d$ by ImageNet-pretrained ResNet-50 with asymmetric fine-tuning (lower blocks frozen, higher layers adapted). (2) \textbf{Global Stitching}: absolute position encoding $P_{pos}$ preserves physical order among instances; a Transformer encoder models cross-window dependencies: $H' = \text{TransformerEncoder}([h_1, \dots, h_K] + P_{pos})$. (3) \textbf{Gated Attention Aggregation} \cite{ilse2018attention} computes instance weights:
+\begin{equation}
+a_k = \frac{\exp\left(\mathbf{w}^T\left(\tanh(\mathbf{V} h'_k) \odot \text{sigm}(\mathbf{U} h'_k)\right)\right)}{\sum_{j} \exp\left(\mathbf{w}^T\left(\tanh(\mathbf{V} h'_j) \odot \text{sigm}(\mathbf{U} h'_j)\right)\right)}
+\label{eq:gated_attention}
+\end{equation}
+The bag representation $Z_{bag} = \sum_k a_k h'_k$ feeds the classifier; weights $A=\{a_k\}$ anchor subsequent traceback.
+
+\subsubsection{Regularization}
+Three strategies improve generalization: (1) inverse-frequency weighted sampling to balance long-tail classes; (2) label smoothing ($\epsilon=0.1$); and (3) Random Erasing ($p=0.3$) on instance patches to encourage the model to learn from texture patterns rather than fixed coordinates.
+
+\paragraph{Cost structure.} With a fixed instance budget of $N_{\max}{=}12$, the total backbone cost---ResNet-50 encoding plus Transformer self-attention---is $O(N_{\max}^2)$ and therefore constant with respect to file size $S$, whereas full-stream sequence models scale with $S$. Preprocessing is $O(S)$. Absolute latency is implementation-dependent and not benchmarked here.
+
+\subsection{Dual-Granularity Decision Traceback}
+Attention weights enable traceable attribution at two granularities (Fig.~\ref{fig:inverse_mapping}); $W_0$ is excluded, so traceback operates only on local windows.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.58\linewidth]{figures/inverse_mapping.png}
+    \caption{Attention weights are inversely mapped through $\mathcal{M}(x,y)$ to contiguous byte intervals, enabling analysts to directly inspect flagged offsets.}
+    \label{fig:inverse_mapping}
+\end{figure}
+
+\subsubsection{Macroscopic Family Profiling}
+Local instances with $a_k > \tau = \mu_A + \sigma_A$ are selected; for windows spanning multiple sections, weights are allocated by coverage ratio $w_{k \to j} = a_k \cdot |I_k \cap S_j|/|I_k|$. Aggregation yields family-level section attention distributions for analyst inspection.
+
+\paragraph{Microscopic Byte-Level Traceback.}
+Local instances with $a_k > \mu_A + \sigma_A$ are inversely mapped to byte intervals through $\mathcal{M}$; overlapping or adjacent intervals are then merged after sorting by start offset.
+Instance granularity bounds localization to a 56~KiB interval per instance, which serves as an analytical pivot directly importable into IDA Pro.
+
+\section{Experimental Evaluation}
+\label{sec:evaluation}
+
+We intentionally adopt a controlled experimental setup without extensive hyperparameter search or domain-specific pre-training, in order to isolate the effect of SA-MIL's core architectural components. The evaluation is organized around five research questions: \textbf{RQ1}---can SA-MIL improve classification while preserving physical resolution? \textbf{RQ2}---what do multi-channel representations contribute, and how sensitive is performance to the selected configuration? \textbf{RQ3}---how does SA-MIL perform in binary classification under balanced and imbalanced conditions, and how does it respond to UPX packing and obfuscation transformations? \textbf{RQ4}---what family-specific PE-section attention patterns does SA-MIL learn? \textbf{RQ5}---does SA-MIL provide physically addressable traceback while restricting byte-level mapping to offset-preserving local windows?
+
+\subsection{Dataset Construction and Experimental Setup}
+\label{subsec:exp_setup}
+
+The dataset contains 3,963 SHA-256-deduplicated PE malware samples from MalwareBazaar, covering six families: njrat (939), Trickbot (880), Gozi (768), GuLoader (586), IcedID (580), and Heodo (210), split 70/15/15 into 2,771/592/600 training/validation/test samples. Macro-F1 is the primary family-attribution metric; AUROC, FPR, TPR, precision, and F1 are reported for binary classification at threshold 0.5.
+
+\subsection{RQ1: Classification Performance and Baseline Comparison}
+\label{subsec:rq1_performance}
+Baselines span three categories: (1) \textbf{Vision}: ResNet-18 ($224\times224$ forced scaling), IMCEC \cite{vasan2020image} (ensemble of fine-tuned CNNs: VGG16/ResNet-50), ViT-B/16 \cite{dosovitskiy2020image}; (2) \textbf{Long-Sequence}: MalConv \cite{raff2017malware} (64~KiB truncation) and MalConv2 \cite{raff2021classifying} (full-length, no truncation); (3) \textbf{MIL}: AB-MIL \cite{ilse2018attention} (gated attention only) and TransMIL \cite{shao2021transmil} (CLS-Token aggregation). All baselines use the same data split; method-specific preprocessing and hyperparameters follow their original formulations where applicable. AB-MIL and TransMIL share SA-MIL's bag construction and ResNet-50 encoder to isolate differences in MIL aggregation.
+
+
+\begin{table}[htbp]
+\centering
+\caption{Overall classification performance comparison on the test set (N=600)}
+\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}p{3.0cm}p{5.5cm}cc@{}}
+\toprule
+\textbf{Category}               & \textbf{Method}                                   & \textbf{Accuracy} & \textbf{Macro-F1} \\
+\midrule
+Long-seq Truncation             & MalConv \cite{raff2017malware} (64~KiB truncation)  & 78.00\%           & 67.00\%           \\
+Long-seq Full-length            & MalConv2 \cite{raff2021classifying} (no truncation) & 96.00\%         & 96.37\%           \\
+Vision-Global Scale             & ResNet-18 (global scaling + single-channel)      & 88.72\%           & 88.71\%           \\
+Vision-Global Scale             & IMCEC \cite{vasan2020image} (ensemble of fine-tuned CNNs)       & 94.83\%           & 94.97\%           \\
+Vision-Global Scale             & ViT-B/16 \cite{dosovitskiy2020image}              & 93.00\%           & 93.29\%           \\
+MIL (No Stitch)                 & AB-MIL \cite{ilse2018attention}                   & 95.50\%           & 95.52\%           \\
+MIL (CLS)                       & TransMIL \cite{shao2021transmil}                  & 95.50\%           & 95.33\%           \\
+\textbf{MIL} (Structure-Aware) & \textbf{SA-MIL (Ours)}                            & \textbf{98.83\%}  & \textbf{98.80\%}  \\
+\bottomrule
+\end{tabular}
+\label{tab:overall_performance}
+\end{table}
+
+Table \ref{tab:overall_performance} reveals several patterns. ResNet-18 (Macro-F1 88.71\%) and MalConv (67.00\%) report the performance under forced scaling and a fixed 64~KiB truncation budget, respectively---MalConv achieves zero recall for \texttt{Heodo} in our test split, which may reflect the limitations of fixed-prefix truncation. MalConv2 removes the truncation limit and processes full byte sequences, reaching 96.37\%, the highest baseline score. It still trails SA-MIL, suggesting that the structure-aware spatial representation performs favorably relative to raw-byte modeling in this setting.
+
+IMCEC, ViT-B/16, AB-MIL, and TransMIL converge to 93--95.5\%. SA-MIL outperforms all of them at 98.80\%, surpassing MalConv2 by 2.43 and AB-MIL by 3.28 percentage points. The performance gap is consistent with structure-preserving representations being advantageous over global resizing in this setting. However, because SA-MIL differs from baselines in multiple dimensions (sampling, channels, backbone, aggregator), the exact contribution of semantic-drift mitigation cannot be isolated without controlled experiments.
+
+A three-model ensemble with TTA further reaches 99.28\% Macro-F1; however, SA-MIL's core contribution lies in deterministic byte-offset traceback at instance granularity (Section \ref{subsec:traceback}) rather than raw classification scores.
+
+Per-family F1 ranges from 97.5\% to 100\%. Fine-grained evaluation (Fig.~\ref{fig:confusion_matrix}) confirms strong class-wise performance; \textit{Heodo} attains 100\% F1 on its 33-sample test subset (zero false negatives), though this should be interpreted cautiously given the small subset.
+
+
+
+\subsection{RQ2: Channel Ablation and Configuration Sensitivity}
+\label{subsec:ablation}
+Table \ref{tab:ablation} quantifies each channel's contribution. The R-only baseline achieves Macro-F1 93.17\%; adding the G-channel or B-channel lifts performance above 95\%, and full RGB synergy reaches 98.80\%, showing complementary contributions from the three channels. 
+
+\begin{table}[htbp]
+\centering
+\caption{SA-MIL Channel Ablation Results (Test Set Macro-F1).}
+\label{tab:ablation}
+\begin{tabular}{llc}
+\toprule
+\textbf{Ablation Dimension} & \textbf{Configuration} & \textbf{Macro-F1} \\
+\midrule
+\multirow{4}{*}{Multi-Channel Semantic} 
+& R (Raw Bytes Only) & 93.17\% \\
+& RG (+Section Boundaries) & 95.33\% \\
+& RB (+Local Entropy) & 95.41\% \\
+& \textbf{RGB (Full Synergy)} & \textbf{98.80\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Across two random seeds, Macro-F1 varies by at most 0.17\%; $N_{\max} \in [8, 16]$ produces less than one percentage point of variation.
+
+
+\subsection{RQ3: Binary Classification, UPX and Obfuscation Sensitivity Analysis}
+\label{subsec:binary_performance}
+
+For supplementary binary evaluation, we collected 6,098 benign PE files from a Windows 11 installation and curated public repositories. The balanced setting uses 3,963 samples per class, split into 2,775\allowbreak/594\allowbreak/594 for training\allowbreak/validation\allowbreak/testing. The 20:1 setting uses 4,200/900/900 benign and 210/45/45 malware samples. Separate models were trained for the two settings, with class-aware sampling used for the 20:1 training set. Within each experiment, partitions were checked for SHA-256 overlap. Malware is the positive class, and metrics use a fixed threshold of 0.5.
+
+\begin{table}[htbp]
+\centering
+\caption{Binary PE classification at threshold 0.5 (n=594/594 balanced, n=45/900 20:1). Metrics other than AUROC are percentages.}
+\label{tab:binary}
+\small
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{lrrrrrr}
+\toprule
+Setting & AUROC & Acc. & Prec. & TPR & F1 & FPR \\
+\midrule
+Balanced & .9962 & 98.06 & 97.50 & 98.65 & 98.08 & 2.53 \\
+20:1     & .9772 & 96.51 & 58.11 & 95.56 & 72.27 & 3.44 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At an operating point matched to 95\% true positive rate, FPR is 1.01\% (balanced) and 2.56\% (20:1). Writing precision as TPR/(TPR + $r \cdot$ FPR) for a benign:malicious ratio $r$, the 58.11\% precision at $r{=}20$ is primarily a base-rate effect rather than degraded ranking quality (AUROC 0.9772). This reinforces our positioning: SA-MIL targets post-detection triage and attribution, not first-line screening at high base rates.
+
+With the balanced model, we evaluated 1,998 successfully UPX-packed benign files; 69 were flagged as malicious (FPR: 3.45\% at the default threshold of 0.5, reducing to 1.45\% at 0.9). The unpacked originals of 918 files appeared in the balanced training split, whereas no packed variant was used for training. Hence, this experiment characterizes sensitivity to UPX transformation with partial source-file familiarity rather than unseen-file generalization. This is consistent with prior evidence that packing-induced layout and entropy shifts can materially affect static detection pipelines~\cite{muralidharan2022file}. The deletion tests in Section~\ref{subsec:traceback} probe the functional relevance of the highlighted local windows.
+
+With the same model, we evaluated 1,905 benign files produced by MorphKatz, an instruction-level polymorphic rewriter that modifies \texttt{.text} through semantically equivalent substitutions and validates outputs by re-disassembly. Outputs remain valid PE32+ x64 executables, but validation is instruction/basic-block level rather than whole-program simulation; we therefore report this as a supplementary FPR observation. The obfuscated set yields FPRs of 3.10\% at threshold 0.5 and 0.94\% at 0.9, compared with 3.15\% and 0.89\% for their original counterparts; paired predictions flip for only 3 samples at 0.5 and 1 sample at 0.9.
+
+\subsection{RQ4: Macroscopic Interpretability}
+Reverse-aggregating instance attention to PE sections (Fig.~\ref{fig:attention_heatmap}) reveals family-specific patterns: \textit{Gozi} and \textit{njrat} concentrate over 84\% of attention on \texttt{.text}, \textit{Trickbot} assigns 87.6\% to \texttt{.rsrc}, and \textit{Heodo} assigns 59.2\% to \texttt{.rdata}. These distributions describe where the model concentrates attention but do not, by themselves, establish the underlying malware behavior. They may nevertheless provide structured starting points for analyst inspection.
+
+\begin{figure}[t]
+    \centering
+    \begin{minipage}[c]{0.38\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/confusion_matrix.png}
+        \subcaption{Confusion matrix.}
+        \label{fig:confusion_matrix}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[c]{0.45\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/family_attention_heatmap_6class.png}
+        \subcaption{Section-level attention distribution.}
+        \label{fig:attention_heatmap}
+    \end{minipage}
+    \caption{SA-MIL confusion matrix (left) and per-family section-level attention distribution (right).}
+    \label{fig:cm_and_heatmap}
+\end{figure}
+
+\subsection{RQ5: Microscopic Physical Traceback}
+\label{subsec:traceback}
+We evaluate localization quality with a deletion test: we replace the global-context window and the top-$k\%$ high-attention local windows (together with their immediate overlapping neighbors) with Gaussian noise, then measure the confidence degradation $\Delta P_k = f_c(x) - f_c(\mathcal{O}(x, \mathcal{A}, k))$. If the highlighted regions are functionally relevant, removal should lower confidence; we treat this as relative evidence of localization quality rather than causal sufficiency. Counterfactual intervention is left to future work.
+
+\paragraph{Case study.} For a \textit{Trickbot} sample, the highest-attention instance (Window~\#11, weight 0.1336) maps to the half-open interval \texttt{[0x46000, 0x54000)}, spanning the \texttt{.text}/\texttt{.rdata} boundary and reducing analyst inspection to a 56~KiB region.
+
+\begin{figure}[t]
+    \centering
+    \begin{minipage}[c]{0.38\linewidth}
+        \centering
+        \includegraphics[width=0.96\linewidth]{figures/ultimate_deletion_curve.png}
+        \subcaption{Deletion test.}
+        \label{fig:deletion_test}
+        \vspace{4pt}
+        \includegraphics[width=0.96\linewidth]{figures/baseline_gradcam.png}
+        \subcaption{Grad-CAM: diffuse heatmap.}
+        \label{fig:baseline_cam}
+    \end{minipage}
+    \hspace{6pt}
+    \begin{minipage}[c]{0.14\linewidth}
+        \centering
+        \includegraphics[width=0.96\linewidth]{figures/samil_attention.png}
+        \subcaption{SA-MIL attention.}
+        \label{fig:samil_cam}
+    \end{minipage}
+    \caption{RQ5 attribution evidence. (a) Deletion test: SA-MIL confidence drops 22.70\% at 10\% deletion vs.\ Grad-CAM's 3.63\% at 50\%. (b) Grad-CAM produces diffuse heatmaps that are less precisely addressable after global resizing. (c) SA-MIL yields sharp, instance-level attention directly invertible to byte offsets via $\mathcal{M}(x,y)$.}
+    \label{fig:rq4_evidence}
+\end{figure}
+
+Averaged over 600 test samples, the baseline drops only 3.63\% at 50\% deletion, while SA-MIL drops 22.70\% at 10\% and 33.24\% at 50\%. This steep monotonic decay is consistent with the highlighted regions being functionally relevant, though the lack of a random-occlusion control prevents a calibrated causal interpretation. Grad-CAM is computed on the globally-resized ResNet-18 model of Table~\ref{tab:overall_performance} and mapped back through the resize operator, so the gap reflects representation and attribution granularity rather than the attribution method alone. Each SA-MIL strip corresponds to a deterministic byte interval via $\mathcal{M}(x,y)$, unlike Grad-CAM's diffuse heatmaps.
+
+\section{Discussion and Conclusion}
+
+SA-MIL mitigates resizing-induced semantic drift in instance-level attribution by combining offset-preserving local windows, entropy-driven sampling, and dual-granularity traceback. It achieves 98.8\% Macro-F1 on six-family attribution, and deletion tests provide instance-level localization evidence. By confining byte-level mapping to local windows, SA-MIL supports physically grounded and auditable malware analysis.
+
+Limitations include the resized global-context window, which is intentionally excluded from traceback, and dependence on PE section topology. The evaluation covers six families from a single repository, lacks matched runtime benchmarking, and tests a limited set of packers and semantics-preserving transformations. Because the deletion test lacks a random-occlusion control, noise replacement may introduce out-of-distribution effects; we therefore treat the observed drop as indicative rather than causal. Future work will investigate adaptive imaging beyond PE-specific assumptions, fusion with dynamic execution traces, and integration of physical localization with binary-oriented LLM reasoning.
+
+\bibliographystyle{splncs04}
+\bibliography{SA_MIL}
+
+\end{document}

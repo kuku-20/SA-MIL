@@ -1,0 +1,107 @@
+\begin{thebibliography}{10}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\doi}[1]{https://doi.org/#1}
+
+\bibitem{avtest2025}
+{AV-TEST Institute}: The av-test security report 2024/2025: Evolution of
+  malware and defense evasion. Tech. rep., AV-TEST GmbH (2025),
+  \url{https://www.av-test.org/}
+
+\bibitem{dosovitskiy2020image}
+Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X.,
+  Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S.,
+  Uszkoreit, J., Houlsby, N.: An image is worth 16x16 words: Transformers for
+  image recognition at scale. In: International Conference on Learning
+  Representations (2021)
+
+\bibitem{gibert2020survey}
+Gibert, D., Mateu, C., Planes, J.: The rise of machine learning for detection
+  and classification of malware: Research developments, trends and challenges.
+  Journal of Network and Computer Applications  \textbf{153},  102526 (2020)
+
+\bibitem{gu2023mamba}
+Gu, A., Dao, T.: Mamba: Linear-time sequence modeling with selective state
+  spaces. arXiv preprint arXiv:2312.00752  (2023)
+
+\bibitem{ilse2018attention}
+Ilse, M., Tomczak, J., Welling, M.: Attention-based deep multiple instance
+  learning. In: International Conference on Machine Learning. pp. 2127--2136.
+  PMLR (2018)
+
+\bibitem{muralidharan2022file}
+Muralidharan, T., Cohen, A., Gerson, N., Nissim, N.: File packing from the
+  malware perspective: Techniques, analysis approaches, and directions for
+  enhancements. ACM Computing Surveys  \textbf{55}(5),  1--45 (2022)
+
+\bibitem{nadeem2023sok}
+Nadeem, A., Vos, D., Cao, C., Pajola, L., Dieck, S., Baumgartner, R., Verwer,
+  S.: {SoK}: Explainable machine learning for computer security applications.
+  In: 2023 IEEE 8th European Symposium on Security and Privacy (EuroS\&P). pp.
+  221--240. IEEE (2023)
+
+\bibitem{nataraj2011malware}
+Nataraj, L., Karthikeyan, S., Jacob, G., Manjunath, B.S.: Malware images:
+  Visualization and automatic classification. In: Proceedings of the 8th
+  International Symposium on Visualization for Cyber Security. pp.~1--7 (2011)
+
+\bibitem{petsiuk2018rise}
+Petsiuk, V., Das, A., Saenko, K.: {RISE}: Randomized input sampling for
+  explanation of black-box models. In: British Machine Vision Conference (2018)
+
+\bibitem{pierazzi2020intriguing}
+Pierazzi, F., Pendlebury, F., Cortellazzi, J., Cavallaro, L.: Intriguing
+  properties of adversarial {ML} attacks in the problem space. In: 2020 IEEE
+  Symposium on Security and Privacy. pp. 1332--1349. IEEE (2020)
+
+\bibitem{qiao2019multi}
+Qiao, Y., Jiang, Q., Jiang, Z., Gu, L.: A multi-channel visualization method
+  for malware classification based on deep learning. In: 2019 18th IEEE
+  International Conference On Trust, Security And Privacy In Computing And
+  Communications/13th IEEE International Conference On Big Data Science And
+  Engineering (TrustCom/BigDataSE). pp. 757--762. IEEE (2019)
+
+\bibitem{raff2017malware}
+Raff, E., Barker, J., Sylvester, J., Brandon, R., Catanzaro, B., Nicholas, C.:
+  Malware detection by eating a {Whole EXE}. arXiv preprint arXiv:1710.09435
+  (2017)
+
+\bibitem{raff2021classifying}
+Raff, E., Fleshman, W., Zak, R., Anderson, H.S., Filar, B., McLean, M.:
+  Classifying sequences of extreme length with constant memory applied to
+  malware detection. In: Proceedings of the AAAI Conference on Artificial
+  Intelligence. vol.~35, pp. 9386--9394 (2021)
+
+\bibitem{saqib2024comprehensive}
+Saqib, M., Mahdavifar, S., Fung, B.C., Charland, P.: A comprehensive analysis
+  of explainable {AI} for malware hunting. ACM Computing Surveys
+  \textbf{56}(12),  1--40 (2024)
+
+\bibitem{selvaraju2017grad}
+Selvaraju, R.R., Cogswell, M., Das, A., Vedantam, R., Parikh, D., Batra, D.:
+  {Grad-CAM}: Visual explanations from deep networks via gradient-based
+  localization. In: Proceedings of the IEEE International Conference on
+  Computer Vision. pp. 618--626 (2017)
+
+\bibitem{shao2021transmil}
+Shao, Z., Bian, H., Chen, Y., Wang, Y., Zhang, J., Ji, X., et~al.: {TransMIL}:
+  Transformer based correlated multiple instance learning for whole slide image
+  classification. In: Advances in Neural Information Processing Systems.
+  vol.~34, pp. 2136--2147 (2021)
+
+\bibitem{stiborek2018multiple}
+Stiborek, J., Pevn{\'y}, T., Reh{\'a}k, M.: Multiple instance learning for
+  malware classification. Expert Systems with Applications  \textbf{93},
+  346--357 (2018)
+
+\bibitem{vasan2020image}
+Vasan, D., Alazab, M., Wassan, S., Safaei, B., Zheng, Q.: Image-based malware
+  classification using ensemble of {CNN} architectures ({IMCEC}). Computers \&
+  Security  \textbf{92},  101748 (2020)
+
+\bibitem{warnecke2020evaluating}
+Warnecke, A., Arp, D., Wressnegger, C., Rieck, K.: Evaluating explanation
+  methods for deep learning in security. In: 2020 IEEE European Symposium on
+  Security and Privacy. pp. 158--174. IEEE (2020)
+
+\end{thebibliography}
